@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Thần số học Chuyên sâu: Lê Phạm Thủy Trà</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Soothing Neutrals -->
+    <!-- Application Structure Plan: The SPA is structured thematically to guide the user on a journey of self-discovery. It starts with a high-level "Tổng quan" dashboard for an immediate snapshot. Then, it encourages deeper exploration with "Phân tích Cốt lõi" using interactive accordions. The "Sơ đồ Ngày sinh" provides a unique visual analysis. The "Các Giai đoạn Cuộc đời" section uses an interactive chart to visualize life's path, making abstract timelines tangible. Finally, an "Biểu đồ Năng lượng" radar chart and "Lời khuyên" section synthesize the information for a holistic and actionable conclusion. This non-linear, layered structure is chosen over a simple report format to empower the user to explore at their own pace and focus on areas that resonate most, enhancing understanding and engagement. -->
+    <!-- Visualization & Content Choices: 
+        1. Core Numbers -> Goal: Inform -> Viz: Styled cards -> Interaction: Hover for keywords -> Justification: Quick, digestible summary of foundational traits.
+        2. Detailed Analysis -> Goal: Explain -> Viz: Accordion text blocks -> Interaction: Click to expand/collapse -> Justification: Hides complexity, prevents overwhelming the user, allows focused reading.
+        3. Birth Chart -> Goal: Organize/Analyze -> Viz: HTML Grid Diagram -> Interaction: Static visual -> Justification: Clearly shows number distribution and highlights patterns (empty arrows) which are key analytical points.
+        4. Pinnacles/Challenges -> Goal: Show Change -> Viz: Line Chart (Chart.js) -> Interaction: Clickable legend/buttons to show details for each phase -> Justification: Visualizes life progression and key themes over time, more engaging than a simple table.
+        5. Energy Balance -> Goal: Compare -> Viz: Radar Chart (Chart.js) -> Interaction: Tooltips on hover -> Justification: Provides a holistic, at-a-glance view of the interplay between core energies.
+        6. Advice -> Goal: Synthesize -> Viz: Formatted text -> Interaction: Static -> Justification: Provides a clear, actionable summary.
+        Library/Method: Chart.js for all charts, rendered on Canvas. Custom HTML/CSS for diagrams. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .main-title {
+            color: #2C3E50;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .number-display {
+            color: #D35400; /* Terracotta accent */
+            font-weight: 700;
+        }
+        .nav-button {
+            background-color: #fff;
+            color: #7F8C8D;
+            border: 1px solid #EAEAEA;
+            transition: all 0.3s ease;
+        }
+        .nav-button.active, .nav-button:hover {
+            background-color: #D35400;
+            color: #FFFFFF;
+            border-color: #D35400;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .accordion-header {
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .birth-chart-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            max-width: 300px;
+            margin: auto;
+        }
+        .birth-chart-cell {
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #2c3e50;
+            background-color: #ecf0f1;
+        }
+        .birth-chart-cell.filled {
+            background-color: #D35400;
+            color: white;
+            font-weight: bold;
+        }
+         .chart-container {
+            position: relative; 
+            width: 100%; 
+            max-width: 700px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 40vh;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold main-title">Báo cáo Thần số học Chuyên sâu</h1>
+            <p class="text-xl md:text-2xl font-semibold text-gray-700 mt-2">Lê Phạm Thủy Trà</p>
+            <p class="text-lg text-gray-500">15/10/1996</p>
+        </header>
+
+        <nav id="navigation" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <button data-target="overview" class="nav-button active px-4 py-2 rounded-full font-semibold">Tổng quan</button>
+            <button data-target="core-analysis" class="nav-button px-4 py-2 rounded-full font-semibold">Phân tích Cốt lõi</button>
+            <button data-target="birth-chart" class="nav-button px-4 py-2 rounded-full font-semibold">Sơ đồ Ngày sinh</button>
+            <button data-target="life-stages" class="nav-button px-4 py-2 rounded-full font-semibold">Các Giai đoạn Cuộc đời</button>
+            <button data-target="energy-chart" class="nav-button px-4 py-2 rounded-full font-semibold">Biểu đồ Năng lượng</button>
+            <button data-target="advice" class="nav-button px-4 py-2 rounded-full font-semibold">Lời khuyên & Định hướng</button>
+        </nav>
+
+        <main>
+            <!-- Section: Tổng quan -->
+            <section id="overview" class="section active">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold main-title">Bản đồ Số học của Bạn</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Đây là cái nhìn tổng quan về bốn chỉ số cốt lõi định hình nên con người bạn. Mỗi con số đại diện cho một nguồn năng lượng độc đáo, cùng nhau tạo nên một bản giao hưởng tính cách và số phận.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="card p-6 text-center">
+                        <h3 class="font-semibold text-lg text-gray-700">Đường Đời</h3>
+                        <p class="number-display text-6xl my-3">5</p>
+                        <p class="text-gray-500">Con đường của sự tự do, phiêu lưu và thay đổi. Bạn đến đây để trải nghiệm cuộc sống một cách trọn vẹn nhất.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h3 class="font-semibold text-lg text-gray-700">Sứ Mệnh</h3>
+                        <p class="number-display text-6xl my-3">6</p>
+                        <p class="text-gray-500">Sứ mệnh của người chăm sóc, kiến tạo sự hài hòa và gánh vác trách nhiệm với gia đình, cộng đồng.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h3 class="font-semibold text-lg text-gray-700">Linh Hồn</h3>
+                        <p class="number-display text-6xl my-3">8</p>
+                        <p class="text-gray-500">Khao khát nội tâm về quyền lực, thành công vật chất và khả năng kiểm soát, làm chủ cuộc sống.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <h3 class="font-semibold text-lg text-gray-700">Nhân Cách</h3>
+                        <p class="number-display text-6xl my-3">7</p>
+                        <p class="text-gray-500">Vẻ ngoài thông thái, nội tâm và có chút bí ẩn. Mọi người thấy bạn là người sâu sắc, ham học hỏi và đáng tin cậy.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Phân tích Cốt lõi -->
+            <section id="core-analysis" class="section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold main-title">Giải mã Các Chỉ số Cốt lõi</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Hãy cùng đi sâu vào ý nghĩa của từng con số. Hiểu rõ những năng lượng này giúp bạn khai thác tối đa tiềm năng và nhận diện các thách thức cần vượt qua. Nhấn vào từng chỉ số để xem chi tiết.</p>
+                </div>
+                <div class="space-y-4 max-w-3xl mx-auto">
+                    <div class="card accordion">
+                        <div class="accordion-header p-4 flex justify-between items-center">
+                            <h3 class="font-semibold text-lg">Đường Đời 5: Nhà Thám Hiểm Tự Do</h3>
+                            <span class="text-2xl font-light transform transition-transform duration-300">+</span>
+                        </div>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-gray-600">Người có số đường đời 5 mang trong mình ngọn lửa của sự tò mò và khao khát tự do. Bạn có khả năng thích ứng cao, giao tiếp tốt và có sức thu hút tự nhiên. Cuộc sống của bạn là một chuỗi các sự kiện, trải nghiệm và những cuộc gặp gỡ đa dạng. Bạn ghét sự nhàm chán, ràng buộc và luôn tìm kiếm sự mới mẻ.
+                            <br><br><strong>Điểm mạnh:</strong> Linh hoạt, đa tài, giao tiếp giỏi, nhiệt huyết, dễ dàng kết bạn.
+                            <br><strong>Thách thức:</strong> Dễ bị phân tâm, thiếu kiên định, đôi khi cả thèm chóng chán, cần học cách cam kết và đi sâu vào một lĩnh vực để đạt được thành tựu lớn.</p>
+                        </div>
+                    </div>
+                    <div class="card accordion">
+                        <div class="accordion-header p-4 flex justify-between items-center">
+                            <h3 class="font-semibold text-lg">Sứ Mệnh 6: Người Kiến Tạo Hài Hòa</h3>
+                            <span class="text-2xl font-light transform transition-transform duration-300">+</span>
+                        </div>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-gray-600">Sứ mệnh của bạn gắn liền với trách nhiệm, sự chăm sóc và tình yêu thương. Bạn có xu hướng là người "giữ lửa" trong gia đình và các mối quan hệ. Bạn mang lại sự ổn định, ấm áp và luôn sẵn lòng giúp đỡ người khác. Cái đẹp, sự hài hòa và công lý là những điều bạn luôn hướng tới.
+                            <br><br><strong>Điểm mạnh:</strong> Trách nhiệm, đáng tin cậy, giàu lòng trắc ẩn, yêu thương gia đình, có khiếu thẩm mỹ.
+                            <br><strong>Thách thức:</strong> Dễ ôm đồm quá nhiều việc, có xu hướng bao bọc quá mức hoặc can thiệp vào cuộc sống của người khác, cần học cách cân bằng giữa cho và nhận.</p>
+                        </div>
+                    </div>
+                    <div class="card accordion">
+                        <div class="accordion-header p-4 flex justify-between items-center">
+                            <h3 class="font-semibold text-lg">Linh Hồn 8: Nhà Lãnh Đạo Tham Vọng</h3>
+                            <span class="text-2xl font-light transform transition-transform duration-300">+</span>
+                        </div>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-gray-600">Sâu thẳm bên trong, bạn khao khát thành công, quyền lực và sự thịnh vượng về vật chất. Đây là động lực mạnh mẽ thúc đẩy bạn hành động. Bạn có tư duy của một nhà điều hành, khả năng nhìn xa trông rộng và sức mạnh để biến ý tưởng thành hiện thực. Bạn mong muốn được công nhận và có địa vị trong xã hội.
+                            <br><br><strong>Điểm mạnh:</strong> Tham vọng, quyết đoán, có năng lực tổ chức, tự tin, kiên cường.
+                            <br><strong>Thách thức:</strong> Dễ trở nên độc đoán, quá tập trung vào tiền bạc và quyền lực mà quên đi các giá trị tinh thần, cần học cách cân bằng giữa công việc và cuộc sống, và sử dụng quyền lực một cách khôn ngoan.</p>
+                        </div>
+                    </div>
+                     <div class="card accordion">
+                        <div class="accordion-header p-4 flex justify-between items-center">
+                            <h3 class="font-semibold text-lg">Nhân Cách 7: Nhà Thông Thái Trầm Lặng</h3>
+                            <span class="text-2xl font-light transform transition-transform duration-300">+</span>
+                        </div>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-gray-600">Cách bạn thể hiện ra bên ngoài là một người có chiều sâu, thông minh, và thích phân tích. Mọi người có thể cảm thấy bạn hơi xa cách hoặc khó gần lúc đầu, vì bạn cần thời gian để quan sát và không dễ dàng mở lòng. Bạn có khả năng tập trung cao độ, trực giác tốt và niềm tin vào những điều vượt ra ngoài thế giới vật chất.
+                            <br><br><strong>Điểm mạnh:</strong> Sâu sắc, ham học hỏi, có khả năng phân tích, trực giác tốt, điềm tĩnh.
+                            <br><strong>Thách thức:</strong> Có thể tỏ ra lạnh lùng, đa nghi, hay tự cô lập mình, cần học cách tin tưởng và kết nối cảm xúc với người khác nhiều hơn.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Sơ đồ Ngày sinh -->
+            <section id="birth-chart" class="section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold main-title">Sơ đồ Ngày sinh và Các Mũi tên Cá tính</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Ngày sinh của bạn (15/10/1996) chứa đựng những con số tạo thành một biểu đồ độc đáo, hé lộ những điểm mạnh bẩm sinh và những khía cạnh bạn cần trau dồi để đạt được sự cân bằng.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center max-w-4xl mx-auto">
+                    <div>
+                        <div class="birth-chart-grid">
+                            <div class="birth-chart-cell"></div>
+                            <div class="birth-chart-cell filled">6</div>
+                            <div class="birth-chart-cell filled">99</div>
+                            <div class="birth-chart-cell"></div>
+                            <div class="birth-chart-cell filled">5</div>
+                            <div class="birth-chart-cell"></div>
+                            <div class="birth-chart-cell filled">111</div>
+                            <div class="birth-chart-cell"></div>
+                            <div class="birth-chart-cell"></div>
+                        </div>
+                         <p class="text-center text-sm text-gray-500 mt-4">Biểu đồ thể hiện các con số trong ngày sinh của bạn.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-xl mb-4 text-gray-800">Phân tích Biểu đồ:</h3>
+                        <ul class="space-y-3 text-gray-600">
+                            <li><strong>Ba con số 1:</strong> Cho thấy bạn là người có khả năng diễn đạt tốt, nhưng đôi khi có thể gặp khó khăn trong việc thể hiện cảm xúc thật một cách cân bằng, hoặc nói quá nhiều hoặc quá ít.</li>
+                            <li><strong>Một con số 5 (Ốc đảo):</strong> Con số 5 nằm một mình, cho thấy bạn có thể cảm thấy cô đơn hoặc bị hiểu lầm, dù xung quanh có nhiều người. Bạn có một thế giới nội tâm phong phú và cần không gian riêng.</li>
+                            <li><strong>Một con số 6:</strong> Thể hiện sự sáng tạo và tình yêu thương gia đình.</li>
+                            <li><strong>Hai con số 9:</strong> Cho thấy bạn có hoài bão, trách nhiệm và lý tưởng sống cao đẹp. Đây là một điểm mạnh lớn.</li>
+                            <li class="p-3 bg-orange-50 rounded-lg"><strong>Mũi tên trống 1-2-3 (Kế hoạch):</strong> Bạn có thể gặp khó khăn trong việc lập kế hoạch chi tiết và tuân thủ nó. Cần rèn luyện tính kỷ luật và tổ chức để biến ý tưởng thành hiện thực.</li>
+                             <li class="p-3 bg-orange-50 rounded-lg"><strong>Mũi tên trống 4-5-6 (Ý chí):</strong> Dù có số 5 và 6, việc thiếu số 4 khiến bạn đôi khi thiếu kiên trì, dễ bỏ cuộc khi gặp khó khăn. Cần xây dựng sự kiên định và bền bỉ.</li>
+                            <li class="p-3 bg-orange-50 rounded-lg"><strong>Mũi tên trống 7-8-9 (Hoạt động):</strong> Dù có số 9, việc thiếu 7 và 8 cho thấy bạn có thể hơi thụ động, thiếu tính thực tế và cần người khác thúc đẩy để hành động. Cần chủ động hơn trong việc trải nghiệm và dấn thân.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Các Giai đoạn Cuộc đời -->
+            <section id="life-stages" class="section">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold main-title">Hành trình Cuộc đời qua 4 Đỉnh cao</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Cuộc đời bạn được chia thành 4 giai đoạn lớn, mỗi giai đoạn mang một bài học và cơ hội riêng. Biểu đồ dưới đây thể hiện năng lượng chủ đạo (Đỉnh cao) và thử thách bạn cần vượt qua trong từng giai đoạn.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pinnaclesChart"></canvas>
+                </div>
+                <div id="pinnacle-details" class="mt-8 max-w-3xl mx-auto space-y-4">
+                    <!-- Details will be populated by JS -->
+                </div>
+            </section>
+            
+            <!-- Section: Biểu đồ Năng lượng -->
+            <section id="energy-chart" class="section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold main-title">Biểu đồ Năng lượng Cá nhân</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Biểu đồ này thể hiện sự tương quan và cân bằng giữa 4 chỉ số cốt lõi của bạn, cho thấy những nguồn năng lượng nào đang chiếm ưu thế và định hình nên con người bạn một cách tổng thể.</p>
+                </div>
+                <div class="chart-container h-[50vh] max-h-[500px]">
+                    <canvas id="energyRadarChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Section: Lời khuyên & Định hướng -->
+            <section id="advice" class="section">
+                 <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold main-title">Tổng hợp & Lời khuyên Phát triển</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">Dựa trên toàn bộ phân tích, đây là những định hướng giúp bạn tận dụng tối đa điểm mạnh và cải thiện những điểm cần khắc phục để có một cuộc sống cân bằng và viên mãn hơn.</p>
+                </div>
+                <div class="max-w-3xl mx-auto space-y-6">
+                    <div class="card p-6">
+                        <h3 class="font-semibold text-xl mb-3 text-gray-800">Tận dụng Năng lượng Tự do (Số 5) một cách có Mục đích:</h3>
+                        <p class="text-gray-600">Con đường đời của bạn là sự tự do, nhưng nó cần một la bàn. Hãy kết hợp khao khát phiêu lưu (Số 5) với tham vọng thành công (Số 8 Linh hồn). Thay vì nhảy việc liên tục, hãy tìm một lĩnh vực đủ rộng lớn và năng động để bạn có thể liên tục học hỏi và đổi mới. Các ngành như truyền thông, du lịch, marketing, hoặc kinh doanh tự do rất phù hợp với bạn.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-semibold text-xl mb-3 text-gray-800">Cân bằng giữa Trách nhiệm (Số 6) và Khát vọng Cá nhân (Số 8):</h3>
+                        <p class="text-gray-600">Sứ mệnh chăm sóc (Số 6) và khát vọng thành công (Số 8) có thể mâu thuẫn. Bạn cần học cách đặt ra ranh giới. Hãy chăm sóc gia đình nhưng đừng quên mục tiêu sự nghiệp của mình. Thành công của bạn cũng chính là một cách để bảo bọc và mang lại điều tốt đẹp cho những người thân yêu. Đừng cảm thấy tội lỗi khi dành thời gian cho sự phát triển cá nhân.</p>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="font-semibold text-xl mb-3 text-gray-800">Rèn luyện để Lấp đầy các Mũi tên trống:</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                           <li><strong>Kế hoạch (thiếu 1-2-3):</strong> Bắt đầu bằng những việc nhỏ. Dùng sổ tay, ứng dụng ghi chú để lập kế hoạch cho ngày/tuần. Chia mục tiêu lớn thành các bước nhỏ và thực hiện từng bước một.</li>
+                           <li><strong>Ý chí (thiếu 4-5-6):</strong> Luyện tập thể thao hoặc theo đuổi một thói quen đòi hỏi sự kiên trì (thiền, học nhạc cụ...). Điều này giúp xây dựng "cơ bắp" ý chí.</li>
+                           <li><strong>Hoạt động (thiếu 7-8-9):</strong> Chủ động tham gia các hoạt động thực tế, các dự án cộng đồng, hoặc các chuyến đi dã ngoại. Trải nghiệm thực tế sẽ giúp bạn bớt thụ động và mơ mộng.</li>
+                        </ul>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="font-semibold text-xl mb-3 text-gray-800">Định hướng cho Giai đoạn hiện tại (Đỉnh cao 7, Thách thức 5):</h3>
+                        <p class="text-gray-600">Bạn đang trong giai đoạn (đến năm 31 tuổi) cần tập trung vào học hỏi, phát triển bản thân và chiều sâu nội tâm. Tuy nhiên, thử thách là bạn lại muốn bay nhảy và trải nghiệm thật nhiều. Lời khuyên là hãy "du lịch vào trong". Dành thời gian học một kỹ năng chuyên sâu, đọc sách, thiền định. Những chuyến đi của bạn nên là những chuyến đi có mục đích học hỏi, khám phá văn hóa chứ không chỉ là giải trí đơn thuần. Đây là giai đoạn tích lũy kiến thức nền tảng cho thành công sau này.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navButtons = document.querySelectorAll('.nav-button');
+            const sections = document.querySelectorAll('.section');
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.dataset.target;
+
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    sections.forEach(section => {
+                        if (section.id === targetId) {
+                            section.classList.add('active');
+                        } else {
+                            section.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            const accordions = document.querySelectorAll('.accordion');
+            accordions.forEach(accordion => {
+                const header = accordion.querySelector('.accordion-header');
+                const content = accordion.querySelector('.accordion-content');
+                const icon = header.querySelector('span');
+
+                header.addEventListener('click', () => {
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        icon.classList.remove('rotate-45');
+                    } else {
+                        accordions.forEach(a => {
+                            a.querySelector('.accordion-content').style.maxHeight = null;
+                            a.querySelector('.accordion-header span').classList.remove('rotate-45');
+                        });
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        icon.classList.add('rotate-45');
+                    }
+                });
+            });
+            
+            const pinnacleData = [
+                {
+                    age: '0 - 31 tuổi',
+                    pinnacle: 7,
+                    challenge: 5,
+                    title: 'Đỉnh cao 1 (Số 7) - Giai đoạn Tích lũy Tri thức',
+                    description: 'Đây là giai đoạn bạn cần tập trung vào học hỏi, nghiên cứu và phát triển nội tâm. Bạn sẽ bị thu hút bởi các chủ đề triết học, tâm linh, khoa học. Đây là thời gian để xây dựng nền tảng kiến thức vững chắc cho chính mình.',
+                    challengeText: '<strong>Thách thức (Số 5):</strong> Sự thôi thúc muốn tự do, bay nhảy và trải nghiệm nhiều thứ có thể làm bạn xao lãng khỏi con đường học tập chuyên sâu. Bạn phải học cách cân bằng giữa việc khám phá thế giới bên ngoài và khám phá thế giới nội tâm.'
+                },
+                {
+                    age: '32 - 40 tuổi',
+                    pinnacle: 4,
+                    challenge: 1,
+                    title: 'Đỉnh cao 2 (Số 4) - Giai đoạn Xây dựng Nền móng',
+                    description: 'Giai đoạn này đòi hỏi sự chăm chỉ, kỷ luật và kiên nhẫn. Đây là thời điểm để bạn xây dựng sự nghiệp, gia đình, tài chính một cách vững chắc. Thành công đến từ sự nỗ lực bền bỉ và có tổ chức.',
+                    challengeText: '<strong>Thách thức (Số 1):</strong> Bạn sẽ phải đối mặt với việc khẳng định bản thân, học cách tự tin và độc lập. Có thể bạn sẽ cảm thấy cần phải đấu tranh để có tiếng nói riêng và không bị phụ thuộc vào người khác.'
+                },
+                {
+                    age: '41 - 49 tuổi',
+                    pinnacle: 11,
+                    challenge: 4,
+                    title: 'Đỉnh cao 3 (Số 11) - Giai đoạn Khai sáng Tinh thần',
+                    description: 'Đây là một giai đoạn rất đặc biệt với năng lượng của con số master 11. Trực giác của bạn sẽ cực kỳ nhạy bén. Bạn có cơ hội trở thành người truyền cảm hứng, dẫn dắt người khác bằng những giá trị tinh thần cao đẹp. Đây là lúc để bạn tỏa sáng và thực hiện những lý tưởng lớn lao.',
+                    challengeText: '<strong>Thách thức (Số 4):</strong> Cuộc sống sẽ yêu cầu bạn phải sống thực tế và có kỷ luật. Những lý tưởng bay bổng của bạn cần được xây dựng trên một nền tảng vững chắc, nếu không bạn sẽ dễ rơi vào trạng thái mơ mộng, thiếu thực tế.'
+                },
+                {
+                    age: '50+ tuổi',
+                    pinnacle: 8,
+                    challenge: 6,
+                    title: 'Đỉnh cao 4 (Số 8) - Giai đoạn Gặt hái Thành quả',
+                    description: 'Đây là giai đoạn bạn gặt hái những thành quả vật chất và quyền lực từ những nỗ lực trước đó. Bạn sẽ có cơ hội nắm giữ những vị trí quan trọng, quản lý tài chính lớn và tạo ra ảnh hưởng mạnh mẽ. Đây là lúc để bạn làm chủ cuộc đời mình.',
+                    challengeText: '<strong>Thách thức (Số 6):</strong> Bạn sẽ phải đối mặt với những trách nhiệm lớn lao liên quan đến gia đình, cộng đồng. Thách thức là làm sao để cân bằng giữa quyền lực, sự nghiệp với tình yêu thương và sự chăm sóc dành cho người thân.'
+                }
+            ];
+
+            const detailsContainer = document.getElementById('pinnacle-details');
+
+            function displayPinnacleDetails(index = 0) {
+                 detailsContainer.innerHTML = '';
+                 const data = pinnacleData[index];
+                 const detailElement = `
+                    <div class="card p-6 animate-fade-in">
+                         <h3 class="font-semibold text-xl mb-2 text-gray-800">${data.title}</h3>
+                         <p class="font-medium text-orange-600 mb-3">${data.age}</p>
+                         <p class="text-gray-600 mb-4">${data.description}</p>
+                         <div class="p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
+                             <p class="text-gray-700">${data.challengeText}</p>
+                         </div>
+                    </div>
+                 `;
+                 detailsContainer.innerHTML = detailElement;
+            }
+            
+            // Pinnacles Line Chart
+            const ctxPinnacles = document.getElementById('pinnaclesChart').getContext('2d');
+            new Chart(ctxPinnacles, {
+                type: 'line',
+                data: {
+                    labels: pinnacleData.map(p => p.age),
+                    datasets: [{
+                        label: 'Năng lượng Đỉnh cao',
+                        data: pinnacleData.map(p => p.pinnacle),
+                        borderColor: '#D35400',
+                        backgroundColor: 'rgba(211, 84, 0, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Thử thách',
+                        data: pinnacleData.map(p => p.challenge),
+                        borderColor: '#7F8C8D',
+                        backgroundColor: 'rgba(127, 140, 141, 0.1)',
+                         borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#4A4A4A'
+                            },
+                             grid: {
+                                color: '#EAEAEA'
+                            }
+                        },
+                        x: {
+                             ticks: {
+                                color: '#4A4A4A'
+                            },
+                             grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#4A4A4A',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                             callbacks: {
+                                title: function(context) {
+                                    return `Giai đoạn ${context[0].label}`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const dataIndex = elements[0].index;
+                            displayPinnacleDetails(dataIndex);
+                        }
+                    }
+                }
+            });
+
+             displayPinnacleDetails(0);
+
+            // Energy Radar Chart
+            const ctxRadar = document.getElementById('energyRadarChart').getContext('2d');
+            new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Đường Đời (Trải nghiệm)', 'Sứ Mệnh (Cống hiến)', 'Linh Hồn (Khát khao)', 'Nhân Cách (Thể hiện)'],
+                    datasets: [{
+                        label: 'Mức độ Năng lượng',
+                        data: [5, 6, 8, 7],
+                        backgroundColor: 'rgba(211, 84, 0, 0.2)',
+                        borderColor: '#D35400',
+                        pointBackgroundColor: '#D35400',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#D35400'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: '#EAEAEA'
+                            },
+                            grid: {
+                                color: '#EAEAEA'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                },
+                                color: '#2C3E50'
+                            },
+                            ticks: {
+                                backdropColor: '#FDFBF8',
+                                color: '#7F8C8D'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 10
+                        }
+                    },
+                     plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
